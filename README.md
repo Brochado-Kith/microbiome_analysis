@@ -35,5 +35,9 @@ There are different estimators of alpha diversity:
 
 ![f837a019109e054043577a3396c2cca5a2c3ae50](https://github.com/Brochado-Kith/microbiome_analysis/assets/135698696/efd0d792-ace9-457d-b06e-b1b94d67cc74)
 
-> Simpson:
+> Simpson: Estimates the probability that when randomly choosing two species these two species correspond to the same Cluster.
+> 
+![d2880c237ac6db179f9c52a1ba06512a3965af2a](https://github.com/Brochado-Kith/microbiome_analysis/assets/135698696/cdc91246-19ec-4303-9a18-85e8b9fe8510)
+
+ 
 
