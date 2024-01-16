@@ -1,8 +1,8 @@
 # Microbiome analysis
-Thank you for reach these scripts, hope you find them usefull.
+Thank you for reach to these scripts, hope you find them usefull.
 
 The following codes are focused on microbiome analysis with R.
-Alpha, Beta and Relative abundance differences (RA).
+Alpha, Beta and Relative abundance differences (RA) will be explored along this pipeline.
 
 These scripts are made with shinny code that allows interactivity.
 You will be able to choose which groups will be on the analysis, percentaje of prevalence of Clusters, etc.
@@ -29,14 +29,14 @@ First we will calculate the [alpha diversity](https://github.com/Brochado-Kith/m
 
 There are different estimators of alpha diversity:
 
-> Chao1: Estimates the diversity by using the total number of species(N) and the number of singletons(S) (species observed only once) and doubletons(D) (species observed two times). The formula will be **Chao1=N+S^2/(2xD)**.
+> Chao1 index: Estimates the diversity by using the total number of species(N) and the number of singletons(S) (species observed only once) and doubletons(D) (species observed two times). The formula will be **Chao1=N+S^2/(2xD)**.
 
-> Shannon: Estimates the heterogeneicity of the sample taking into account the number of species and the abundance of them. It is explained as the probability of taking a certain species above others. If one specie is predominant, the probability will be higher and the diversity will be lower.
+> Shannon index: Estimates the heterogeneicity of the sample taking into account the number of species and the abundance of them. It is explained as the probability of taking a certain species above others. If one specie is predominant, the probability will be higher and the diversity will be lower.
 
 ![f837a019109e054043577a3396c2cca5a2c3ae50](https://github.com/Brochado-Kith/microbiome_analysis/assets/135698696/efd0d792-ace9-457d-b06e-b1b94d67cc74)
 
-> Simpson: Estimates the probability that when randomly choosing two species these two species correspond to the same Cluster.
-> 
+> Simpson index: Estimates the probability that when randomly choosing two species these two species correspond to the same Cluster.
+
 ![d2880c237ac6db179f9c52a1ba06512a3965af2a](https://github.com/Brochado-Kith/microbiome_analysis/assets/135698696/cdc91246-19ec-4303-9a18-85e8b9fe8510)
 
  
