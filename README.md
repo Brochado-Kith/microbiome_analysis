@@ -1,4 +1,4 @@
-![f837a019109e054043577a3396c2cca5a2c3ae50](https://github.com/Brochado-Kith/microbiome_analysis/assets/135698696/efd0d792-ace9-457d-b06e-b1b94d67cc74)# Microbiome analysis
+# Microbiome analysis
 Thank you for reach these scripts, hope you find them usefull.
 
 The following codes are focused on microbiome analysis with R.
@@ -32,6 +32,8 @@ There are different estimators of alpha diversity:
 > Chao1: Estimates the diversity by using the total number of species(N) and the number of singletons(S) (species observed only once) and doubletons(D) (species observed two times). The formula will be **Chao1=N+S^2/(2xD)**.
 
 > Shannon: Estimates the heterogeneicity of the sample taking into account the number of species and the abundance of them. It is explained as the probability of taking a certain species above others. If one specie is predominant, the probability will be higher and the diversity will be lower.
+
+![f837a019109e054043577a3396c2cca5a2c3ae50](https://github.com/Brochado-Kith/microbiome_analysis/assets/135698696/efd0d792-ace9-457d-b06e-b1b94d67cc74)
 
 > Simpson:
 
