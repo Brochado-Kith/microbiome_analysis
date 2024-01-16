@@ -25,7 +25,7 @@ optional
 ## Alpha diversity
 
 Once you have created the phyloseq object you can start the analysis.
-First we will calculate the alpha diversity in our data. Alpha diversity denominates the diviersity within each sample. 
+First we will calculate the (alpha diversity)[https://github.com/Brochado-Kith/microbiome_analysis/blob/main/Scripts/Alpha_diversity.rmd] in our data. Alpha diversity denominates the diversity within each sample. 
 
 There are different estimators of alpha diversity:
 
