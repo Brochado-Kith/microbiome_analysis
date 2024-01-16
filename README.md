@@ -8,7 +8,7 @@ These scripts are made with shinny code that allows interactivity.
 You will be able to choose which groups will be on the analysis, percentaje of prevalence of Clusters, etc.
 
 First of all, it is important to you to know that the analysis in the scripts starts from a phyloseq object.
-If you do not have a phyloseq object, you could start from ts script in [Scripts/creating_phyloseq_object.rmd](https://github.com/Brochado-Kith/microbiome_analysis/blob/main/Scripts/creating_phyloseq_object.rmd).
+If you do not have a phyloseq object, you could start from [this script](https://github.com/Brochado-Kith/microbiome_analysis/blob/main/Scripts/creating_phyloseq_object.rmd).
 
 Phyloseq objects are a compound of tables with information interconected.
 
