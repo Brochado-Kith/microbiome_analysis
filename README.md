@@ -49,10 +49,17 @@ As with the alpha diversity stimation, we will have differents ways to calculate
 ![imagen](https://github.com/Brochado-Kith/microbiome_analysis/assets/135698696/e12c9801-ddcf-4ae4-9c00-1c18c9a430cc)
 
 
-> Jaccard: 
+> Jaccard: Jaccard index is estimated as the number of clusters in one of the samples (a). The number of clusters in the other sample (b). The number of clusters shared by both samples.
 
-> Aitchinson
+![imagen](https://github.com/Brochado-Kith/microbiome_analysis/assets/135698696/3f5ab013-a3c8-414b-9f17-6e704992a0aa)
 
-> Unifrac
+
+> Aitchison: One of the particularities of the Aitchison distance is that the data have to be centered log ratio (CLR) transformed. This distance estimation corresponds to Euclidean distances but with the CLR transformation.
+
+> Unifrac: Unifrac distances will take into account the phylogenetic tree to calculate the distance matrix. There are two tipes of unifrac distance estimation, weigthed and unweighted. Weigthed unifrac will consider the abundance of unshared clusters when estimating the distance. Unweigthed unifrac will only consider presence absence of unshared clusters.
+
+## Relative abundance differences
+
+
 
 
