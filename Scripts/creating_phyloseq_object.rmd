@@ -1,1 +1,10 @@
-
+library(phyloseq)
+library(ape)
+counts<-read.table("counts.txt")
+variables<-read.table("sample_data.txt")
+taxa<-read.table("taxa.txt")
+tree<-read.tree(tree.nwk")
+ps <- phyloseq(otu_table(counts, taxa_are_rows=FALSE), 
+               sample_data(variables), 
+               tax_table(taxa),phy_tree(tree))
+saveRDS(ps,file="ps.rds")
