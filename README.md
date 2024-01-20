@@ -40,7 +40,19 @@ There are different estimators of alpha diversity:
 ![d2880c237ac6db179f9c52a1ba06512a3965af2a](https://github.com/Brochado-Kith/microbiome_analysis/assets/135698696/cdc91246-19ec-4303-9a18-85e8b9fe8510)
 
 ## Beta diversity
-[Beta diversity] estimates the community differences within groups.
+[Beta diversity](https://github.com/Brochado-Kith/microbiome_analysis/blob/main/Scripts/Beta_diversity.rmd) estimates the community differences within groups.
 First thing we will do is to create the distance matrix. This matrix is calculated by estimating the distance between each pair of invdividuals. The next step will be to calculate the beta dispersion. At the final step, we will carry out a permanova to see the differences in beta diversity.
+As with the alpha diversity stimation, we will have differents ways to calculate the distance matrix.
+
+> Bray curtis: Bray-Curtis dissimilarity takes into account those species that are shared between samples and sum the lesser value of eacch shared cluster (Cij) and the total value of the sum of each sample (Si and Sj).
+
+![imagen](https://github.com/Brochado-Kith/microbiome_analysis/assets/135698696/e12c9801-ddcf-4ae4-9c00-1c18c9a430cc)
+
+
+> Jaccard: 
+
+> Aitchinson
+
+> Unifrac
 
 
