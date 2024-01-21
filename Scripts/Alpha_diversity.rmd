@@ -1,1 +1,79 @@
+---
+title: "Alpha diversity Analysis"
+author: "Óscar Brochado Kith"
+date: "2023-10-24"
+output: html_document
+runtime: shiny
+---
 
+```{r echo=FALSE, warning=FALSE,error=FALSE,message=FALSE}
+
+library(shiny)
+library(ggplot2)
+library(phyloseq)
+library(lme4)
+library(rstatix)
+library(DT)
+```
+
+```{r echo=FALSE}
+fileInput("file",label="select ypur phyloseq object",accept=".rds")
+selectInput("data","Alpha diversity index",c("Chao1","Shannon","Simpson"))
+selectInput("data2",label="Groups to compare","",multiple=TRUE)
+
+#selectInput("variable_selector",label="seleccione grupo","")
+
+loaded_data <- reactiveVal(NULL)
+observeEvent(input$file, {
+    # Verificar si se ha seleccionado un archivo
+    if (is.null(input$file)) return()
+    
+    # Leer el archivo cargado (puedes ajustar la función según el formato de tu archivo)
+    data <- readRDS(input$file$datapath)
+    
+    # Almacenar los datos en la reactiveVal
+    loaded_data(data)
+    
+    # Extraer las columnas del archivo como opciones para selectInput
+    col_options <- levels(as.factor(as.data.frame(sample_data(data))$group))
+    
+    # Configurar las opciones para selectInput
+    updateSelectInput(session, "data2", choices = col_options)
+  })
+```
+# Boxplot
+```{r echo=FALSE}
+renderPlot({
+ps<-readRDS(input$file$datapath)
+alpha_div_ps<-estimate_richness(ps,measures=c("Chao1","Shannon","Simpson"))
+alpha_div_ps$group<-as.factor(as.data.frame(sample_data(ps))$group)
+alpha_div_ps_mod<-alpha_div_ps[alpha_div_ps$group%in%input$data2,]
+
+    ggplot(alpha_div_ps_mod,aes(x=group,y=get(input$data)))  +
+    geom_boxplot(aes(colour=group)) + geom_jitter(width = 0.2,aes(colour=group))
+#print(p)
+})
+
+```
+
+# Kruskal-Wallis
+```{r echo=FALSE}
+renderDataTable({
+ps<-readRDS(input$file$datapath)
+alpha_div_ps<-estimate_richness(ps,measures=c("Chao1","Shannon","Simpson"))
+alpha_div_ps$group<-as.factor(as.data.frame(sample_data(ps))$group)
+
+dunn_test(alpha_div_ps[alpha_div_ps$group%in%input$data2,],as.formula(paste0(input$data,"~","group")),p.adjust.method = "fdr")
+})
+```
+
+# Logistic regresion model
+```{r echo=FALSE}
+renderDataTable({
+ps<-readRDS(input$file$datapath)
+alpha_div_ps<-estimate_richness(ps,measures=c("Chao1","Shannon","Simpson"))
+alpha_div_ps$group<-as.factor(as.data.frame(sample_data(ps))$group)
+
+as.data.frame(summary(lm(as.formula(paste0(input$data,"~","group")),data=alpha_div_ps[alpha_div_ps$group%in%input$data2,]))$coefficients)
+})
+```
