@@ -19,7 +19,7 @@ library(DT)
 
 fileInput("file",label="select your phyloseq object",accept=".rds")
 selectInput("data","Alpha diversity index",c("Chao1","Shannon","Simpson"))
-selectInput("variable",label="Select grouping varable","")
+selectInput("variable",label="Select grouping variable","")
 selectInput("data2",label="Groups to compare","",multiple=TRUE)
 
 loaded_data <- reactiveVal(NULL)
