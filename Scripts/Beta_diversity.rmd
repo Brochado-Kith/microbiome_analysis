@@ -18,36 +18,40 @@ library(vegan)
 ```
 
 ```{r echo=FALSE}
-fileInput("file",label="select ypur phyloseq object",accept=".rds")
+fileInput("file",label="select your phyloseq object",accept=".rds")
 selectInput("data",label = "beta diversity method",c("bray", "jaccard", "aitchison", "robust.aitchison","weighted unifrac","unweighted unifrac"))
-selectInput("data2",label="Groups to compare","",multiple=TRUE)
-selectInput("rank",label="Groups to compare","")
-sliderInput("percentaje",
-                  label = "percetaje of prevalence",
+selectInput("rank",label="taxonomic rank","")
+sliderInput("percentage",
+                  label = "percentage of prevalence",
                   min = 1,
                   max = 100,
                   value = 10)
+selectInput("variable",label="Select grouping varable","")
+selectInput("data2",label="Groups to compare","",multiple=TRUE)
 
-#selectInput("variable_selector",label="seleccione grupo","")
 
 loaded_data <- reactiveVal(NULL)
 observeEvent(input$file, {
-    # Verificar si se ha seleccionado un archivo
-    if (is.null(input$file)) return()
+    req(input$file)
     
-    # Leer el archivo cargado (puedes ajustar la función según el formato de tu archivo)
-    data <- readRDS(input$file$datapath)
+    datos <- readRDS(input$file$datapath)
     
-    # Almacenar los datos en la reactiveVal
-    loaded_data(data)
+    loaded_data(datos)
     
-    # Extraer las columnas del archivo como opciones para selectInput
-    col_options <- levels(as.factor(as.data.frame(sample_data(data))$group))
+    col_options <- colnames(as.data.frame(sample_data(datos)))
     
-    # Configurar las opciones para selectInput
-    updateSelectInput(session, "data2", choices = col_options)
+    updateSelectInput(session, "variable", choices = col_options)
   })
 
+observeEvent(input$variable, {
+    req(loaded_data())
+
+    datos2 <- readRDS(input$file$datapath)
+
+    col_options2 <- unique(data.frame(sample_data(datos2))[,input$variable])
+
+    updateSelectInput(session, "data2", choices =col_options2)
+})
 
 loaded_data2 <- reactiveVal(NULL)
 observeEvent(input$file, {
@@ -71,10 +75,12 @@ observeEvent(input$file, {
 # Beta diversity
 ```{r echo=FALSE,message=FALSE, warning=FALSE,error=FALSE}
 renderDataTable({
+  req(input$data2,input$variable)
 ps<-readRDS(input$file$datapath)
-  min_samples <- round((nrow(sample_data(ps))*as.numeric(input$percentaje)/100))  # Ajusta según tu criterio
+  min_samples <- round((nrow(sample_data(ps))*as.numeric(input$percentage)/100))  # Ajusta según tu criterio
 ps<-tax_glom(ps,taxrank = input$rank)
 data_phylo_filt <- prune_taxa(taxa_sums(ps) >= min_samples, ps)
+sample_data(data_phylo_filt)$grouping_variable<-as.factor(data.frame(sample_data(data_phylo_filt))[,input$variable])
 taxa<-tax_table(data_phylo_filt)
 samples_df<-sample_data(data_phylo_filt)
 set.seed(1782) # set seed for analysis reproducibility
@@ -82,25 +88,29 @@ OTU_filt_rar = rarefy_even_depth(otu_table(data_phylo_filt), rngseed = TRUE, rep
 data_otu_filt_rar = data.frame(otu_table(OTU_filt_rar)) # create a separated file
 data_phylo_filt_rar <- phyloseq(OTU_filt_rar, taxa, sample_data(samples_df)) # create a phyloseq object
 
-        ps_temp<-phyloseq(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$group %in% input$data2,],
+
+        ps_temp<-phyloseq(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,],
                       taxa,
-                      sample_data(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$group %in% input$data2,])
+                      sample_data(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,])
 
 
 
   if (input$data=="aitchison") {
     ps_clr<-microbiome::transform(data_phylo_filt,"clr")
-      as.data.frame(
-        adonis2(as.formula(otu_table(ps_clr)[sample_data(ps_clr)$group %in% input$data2,]~(sample_data(ps_clr))$group[sample_data(ps_clr)$group%in%input$data2]),permutations=9999, method="euclidean")
+      a<-as.data.frame(
+adonis2(as.formula(otu_table(ps_clr)[sample_data(ps_clr)$grouping_variable %in% input$data2,]~(sample_data(ps_clr))$grouping_variable[sample_data(ps_clr)$grouping_variable%in%input$data2]),permutations=9999, method="euclidean")
+
         )
+      rownames(a)[1]<-as.character(input$variable)
+      a
   }
   else if (input$data=="weighted unifrac") {
 tree<-phy_tree(data_phylo_filt)
     data_phylo_filt_rar <- phyloseq(OTU_filt_rar, taxa, sample_data(samples_df),tree) # create a phyloseq object
 
-        ps_temp<-phyloseq(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$group %in% input$data2,],
+        ps_temp<-phyloseq(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,],
                       taxa,
-                      sample_data(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$group %in% input$data2,],tree)
+                      sample_data(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,],tree)
 
     unifrac.dist <- UniFrac(ps_temp,
                         weighted = TRUE,
@@ -108,18 +118,18 @@ tree<-phy_tree(data_phylo_filt)
                         parallel = FALSE,
                         fast = TRUE)
 
-permanova <- adonis2(unifrac.dist ~ sample_data(ps_temp)$group)
+permanova <- adonis2(unifrac.dist ~ sample_data(ps_temp)$grouping_variable)
 
 as.data.frame(permanova)
 
   }
   else if (input$data=="unweighted unifrac") {
 
-data_phylo_filt_rar <- phyloseq(OTU_filt_rar, taxa, sample_data(samples_df),tree) # create a phyloseq object
+data_phylo_filt_rar <- phyloseq(OTU_filt_rar, taxa, sample_data(samples_df),tree) 
 
-        ps_temp<-phyloseq(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$group %in% input$data2,],
+        ps_temp<-phyloseq(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,],
                       taxa,
-                      sample_data(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$group %in% input$data2,],tree)
+                      sample_data(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,],tree)
     
     unifrac.dist <- UniFrac(ps_temp,
                         weighted = FALSE,
@@ -127,14 +137,16 @@ data_phylo_filt_rar <- phyloseq(OTU_filt_rar, taxa, sample_data(samples_df),tree
                         parallel = FALSE,
                         fast = TRUE)
 
-permanova <- adonis2(unifrac.dist ~ sample_data(ps_temp)$group)
+permanova <- adonis2(unifrac.dist ~ sample_data(ps_temp)$grouping_variable)
 
 as.data.frame(permanova)
   }
  else{
-         as.data.frame(
-        adonis2(as.formula(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$group %in% input$data2,]~(sample_data(data_phylo_filt_rar))$group[sample_data(data_phylo_filt_rar)$group%in%input$data2]),permutations=9999, method=input$data)
+  a<-       data.frame(
+        adonis2(as.formula(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,]~(sample_data(data_phylo_filt_rar))$grouping_variable[sample_data(data_phylo_filt_rar)$grouping_variable%in%input$data2]),permutations=9999, method=input$data)
         )
+  rownames(a)[1]<-as.character(input$variable)
+  a
  }
 })
 
@@ -146,11 +158,12 @@ as.data.frame(permanova)
 
 
 renderPlot({
-  
+  req(input$data2,input$variable)
  ps<-readRDS(input$file$datapath)
-  min_samples <- round((nrow(sample_data(ps))*as.numeric(input$percentaje)/100))  # Ajusta según tu criterio
+  min_samples <- round((nrow(sample_data(ps))*as.numeric(input$percentage)/100))  # Ajusta según tu criterio
 ps<-tax_glom(ps,taxrank = input$rank)
 data_phylo_filt <- prune_taxa(taxa_sums(ps) >= min_samples, ps)
+sample_data(data_phylo_filt)$grouping_variable<-as.factor(data.frame(sample_data(data_phylo_filt))[,input$variable])
 taxa<-tax_table(data_phylo_filt)
 samples_df<-sample_data(data_phylo_filt)
 set.seed(1782) # set seed for analysis reproducibility
@@ -158,35 +171,35 @@ OTU_filt_rar = rarefy_even_depth(otu_table(data_phylo_filt), rngseed = TRUE, rep
 data_otu_filt_rar = data.frame(otu_table(OTU_filt_rar)) # create a separated file
 data_phylo_filt_rar <- phyloseq(OTU_filt_rar, taxa, sample_data(samples_df)) # create a phyloseq object
 
-        ps_temp<-phyloseq(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$group %in% input$data2,],
+        ps_temp<-phyloseq(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,],
                       taxa,
-                      sample_data(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$group %in% input$data2,])
+                      sample_data(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,])
     
 if (input$data=="aitchison") {
-  #ps_temp_clr<-microbiome::transform(ps_temp,"clr")
+  
   ps_clr<-microbiome::transform(data_phylo_filt,"clr")
   dist_matrix <- vegdist(otu_table(ps_temp_clr), method = "euclidean")
 
-# Realiza un análisis de ordenación (PCoA)
+# PCoA)
 ordination_result <- pcoa(dist_matrix)
 
-# Visualiza la ordenación con plot_ordination
-plot_ordination(ps_temp_clr, ordination_result, color = "group") + geom_point(size=3) + stat_ellipse() 
+# plot_ordination
+plot_ordination(ps_temp_clr, ordination_result, color = "grouping_variable") + geom_point(size=3) + stat_ellipse() 
   
 }
     else if (input$data=="weighted unifrac") {
-      data_phylo_filt_rar <- phyloseq(OTU_filt_rar, taxa, sample_data(samples_df),tree) # create a phyloseq object
+      data_phylo_filt_rar <- phyloseq(OTU_filt_rar, taxa, sample_data(samples_df),tree) 
 
-        ps_temp<-phyloseq(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$group %in% input$data2,],
+        ps_temp<-phyloseq(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,],
                       taxa,
-                      sample_data(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$group %in% input$data2,],tree)
+                      sample_data(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,],tree)
 ordu.wt.uni <- ordinate(ps_temp, "PCoA", "unifrac", weighted=T)
 
 
 wt.unifrac <- plot_ordination(ps_temp, 
-                                     ordu.wt.uni, color="group") 
+                                     ordu.wt.uni, color="grouping_variable") 
 wt.unifrac <- wt.unifrac + ggtitle("Weighted UniFrac") + geom_point(size = 2)
-wt.unifrac <- wt.unifrac + theme_classic() + scale_color_brewer("group", palette = "Set2")
+wt.unifrac <- wt.unifrac + theme_classic() + scale_color_brewer("grouping_variable", palette = "Set2")
 print(wt.unifrac+ stat_ellipse())
 
 
@@ -196,27 +209,27 @@ unifrac.dist <- UniFrac(ps_temp,
                         parallel = FALSE, 
                         fast = TRUE)
 
-permanova <- adonis2(unifrac.dist ~ sample_data(ps_temp)$group)
+permanova <- adonis2(unifrac.dist ~ sample_data(ps_temp)$grouping_variable)
 
 permanova
 
-a<-betadisper(unifrac.dist, sample_data(ps_temp)$group, type = c("median","centroid"), bias.adjust = FALSE,
+a<-betadisper(unifrac.dist, sample_data(ps_temp)$grouping_variable, type = c("median","centroid"), bias.adjust = FALSE,
        sqrt.dist = FALSE, add = FALSE)
-print(as.data.frame(a$group.distances))
+print(as.data.frame(a$grouping_variable.distances))
     }
     
     else if (input$data=="unweighted unifrac") {
       data_phylo_filt_rar <- phyloseq(OTU_filt_rar, taxa, sample_data(samples_df),tree) # create a phyloseq object
 
-        ps_temp<-phyloseq(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$group %in% input$data2,],
+        ps_temp<-phyloseq(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,],
                       taxa,
-                      sample_data(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$group %in% input$data2,],tree)
+                      sample_data(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,],tree)
         
       ordu.unwt.uni <- ordinate(ps_temp, "PCoA", "unifrac", weighted=F)
 unwt.unifrac <- plot_ordination(ps_temp, 
-                                     ordu.unwt.uni, color="group") 
+                                     ordu.unwt.uni, color="grouping_variable") 
 unwt.unifrac <- unwt.unifrac + ggtitle("Unweighted UniFrac") + geom_point(size = 2)
-unwt.unifrac <- unwt.unifrac + theme_classic() + scale_color_brewer("group", palette = "Set2")
+unwt.unifrac <- unwt.unifrac + theme_classic() + scale_color_brewer("grouping_variable", palette = "Set2")
 print(unwt.unifrac+ stat_ellipse())
 
 unifrac.dist <- UniFrac(ps_temp, 
@@ -225,18 +238,18 @@ unifrac.dist <- UniFrac(ps_temp,
                         parallel = FALSE, 
                         fast = TRUE)
 
-permanova <- adonis2(unifrac.dist ~ sample_data(ps_temp)$group)
+permanova <- adonis2(unifrac.dist ~ sample_data(ps_temp)$grouping_variable)
 
 permanova
 
-a<-betadisper(unifrac.dist, sample_data(ps_temp)$group, type = c("median","centroid"), bias.adjust = FALSE,
+a<-betadisper(unifrac.dist, sample_data(ps_temp)$grouping_variable, type = c("median","centroid"), bias.adjust = FALSE,
        sqrt.dist = FALSE, add = FALSE)
-print(as.data.frame(a$group.distances))
+print(as.data.frame(a$grouping_variable.distances))
      
     }
     else{
   pcoa_bc_temp=ordinate(ps_temp,"PCoA",input$data)
-  plot_ordination(ps_temp, pcoa_bc_temp, color = "group") +
+  plot_ordination(ps_temp, pcoa_bc_temp, color = "grouping_variable") +
   geom_point(size = 3) + stat_ellipse()
   
 }
