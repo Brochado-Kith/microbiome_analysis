@@ -19,6 +19,7 @@ library(vegan)
 
 ```{r echo=FALSE}
 fileInput("file",label="Select your phyloseq object",accept=".rds")
+selectInput("transpose",label = "Are the taxa as rows in your otu table?",c("Yes","No"),selected = "No")
 selectInput("data",label = "Beta diversity method",c("bray", "jaccard", "aitchison", "robust.aitchison","weighted unifrac","unweighted unifrac"))
 selectInput("rank",label="Taxonomic rank","")
 sliderInput("percentage",
@@ -79,8 +80,11 @@ This analysis will take some time, please be patient...
 
 ```{r echo=FALSE,message=FALSE, warning=FALSE,error=FALSE}
 renderDataTable({
-  req(length(input$data2)>1,input$variable)
+  req(input$data2,input$variable)
 ps<-readRDS(input$file$datapath)
+if (input$transpose=="Yes") {
+otu_table(ps)<-t(otu_table(ps))
+}
   min_samples <- round((nrow(sample_data(ps))*as.numeric(input$percentage)/100))  # Ajusta según tu criterio
 ps<-tax_glom(ps,taxrank = input$rank)
 data_phylo_filt <- prune_taxa(taxa_sums(ps) >= min_samples, ps)
@@ -102,7 +106,7 @@ data_phylo_filt_rar <- phyloseq(OTU_filt_rar, taxa, sample_data(samples_df)) # c
   if (input$data=="aitchison") {
     ps_clr<-microbiome::transform(data_phylo_filt,"clr")
       a<-as.data.frame(
-adonis2(as.formula(otu_table(ps_clr)[sample_data(ps_clr)$grouping_variable %in% input$data2,]~(sample_data(ps_clr))$grouping_variable[sample_data(ps_clr)$grouping_variable%in%input$data2]),permutations=9999, method="euclidean")
+adonis2(as.formula(otu_table(ps_clr)[sample_data(ps_clr)$grouping_variable %in% input$data2,]~(sample_data(ps_clr))$grouping_variable[sample_data(ps_clr)$grouping_variable%in%input$data2]),permutations=9999, method="euclidean",na.action = na.omit)
 
         )
       rownames(a)[1]<-as.character(input$variable)
@@ -122,7 +126,7 @@ tree<-phy_tree(data_phylo_filt)
                         parallel = FALSE,
                         fast = TRUE)
 
-permanova <- adonis2(unifrac.dist ~ sample_data(ps_temp)$grouping_variable)
+permanova <- adonis2(unifrac.dist ~ sample_data(ps_temp)$grouping_variable,na.action = na.omit)
 
 as.data.frame(permanova)
 
@@ -141,13 +145,13 @@ data_phylo_filt_rar <- phyloseq(OTU_filt_rar, taxa, sample_data(samples_df),tree
                         parallel = FALSE,
                         fast = TRUE)
 
-permanova <- adonis2(unifrac.dist ~ sample_data(ps_temp)$grouping_variable)
+permanova <- adonis2(unifrac.dist ~ sample_data(ps_temp)$grouping_variable,na.action = na.omit)
 
 as.data.frame(permanova)
   }
  else{
   a<-       data.frame(
-        adonis2(as.formula(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,]~(sample_data(data_phylo_filt_rar))$grouping_variable[sample_data(data_phylo_filt_rar)$grouping_variable%in%input$data2]),permutations=9999, method=input$data)
+        adonis2(as.formula(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,]~(sample_data(data_phylo_filt_rar))$grouping_variable[sample_data(data_phylo_filt_rar)$grouping_variable%in%input$data2]),permutations=9999, method=input$data,na.action = na.omit)
         )
   rownames(a)[1]<-as.character(input$variable)
   a
@@ -215,7 +219,7 @@ unifrac.dist <- UniFrac(ps_temp,
                         parallel = FALSE, 
                         fast = TRUE)
 
-permanova <- adonis2(unifrac.dist ~ sample_data(ps_temp)$grouping_variable)
+permanova <- adonis2(unifrac.dist ~ sample_data(ps_temp)$grouping_variable,na.action = na.omit)
 
 permanova
 
@@ -245,7 +249,7 @@ unifrac.dist <- UniFrac(ps_temp,
                         parallel = FALSE, 
                         fast = TRUE)
 
-permanova <- adonis2(unifrac.dist ~ sample_data(ps_temp)$grouping_variable)
+permanova <- adonis2(unifrac.dist ~ sample_data(ps_temp)$grouping_variable,na.action = na.omit)
 
 permanova
 
@@ -263,4 +267,3 @@ print(as.data.frame(a$grouping_variable.distances))
     })
 
 ```
-
