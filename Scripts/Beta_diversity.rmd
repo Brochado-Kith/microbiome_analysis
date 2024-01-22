@@ -124,7 +124,7 @@ as.data.frame(permanova)
 
   }
   else if (input$data=="unweighted unifrac") {
-
+tree<-phy_tree(data_phylo_filt)
 data_phylo_filt_rar <- phyloseq(OTU_filt_rar, taxa, sample_data(samples_df),tree) 
 
         ps_temp<-phyloseq(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,],
@@ -188,6 +188,7 @@ plot_ordination(ps_temp_clr, ordination_result, color = "grouping_variable") + g
   
 }
     else if (input$data=="weighted unifrac") {
+tree<-phy_tree(data_phylo_filt)
       data_phylo_filt_rar <- phyloseq(OTU_filt_rar, taxa, sample_data(samples_df),tree) 
 
         ps_temp<-phyloseq(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,],
@@ -219,6 +220,7 @@ print(as.data.frame(a$grouping_variable.distances))
     }
     
     else if (input$data=="unweighted unifrac") {
+tree<-phy_tree(data_phylo_filt)
       data_phylo_filt_rar <- phyloseq(OTU_filt_rar, taxa, sample_data(samples_df),tree) # create a phyloseq object
 
         ps_temp<-phyloseq(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,],
