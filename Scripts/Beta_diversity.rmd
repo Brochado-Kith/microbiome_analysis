@@ -22,11 +22,11 @@ fileInput("file",label="Select your phyloseq object",accept=".rds")
 selectInput("data",label = "Beta diversity method",c("bray", "jaccard", "aitchison", "robust.aitchison","weighted unifrac","unweighted unifrac"))
 selectInput("rank",label="Taxonomic rank","")
 sliderInput("percentage",
-                  label = "Percentage of prevalence \n (all over this percentage will be used in the analysis)",
+                  label = "Percentage of prevalence",
                   min = 1,
                   max = 100,
                   value = 10)
-selectInput("variable",label="Select grouping varable","")
+selectInput("variable",label="Select grouping variable","")
 selectInput("data2",label="Groups to compare","",multiple=TRUE)
 
 
