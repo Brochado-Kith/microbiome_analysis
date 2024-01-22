@@ -49,6 +49,7 @@ observeEvent(input$variable, {
 ```{r echo=FALSE}
 
 renderPlot({
+    req(input$data2,input$variable)
     ps<-readRDS(input$file$datapath)
     alpha_div_ps<-estimate_richness(ps,measures=c("Chao1","Shannon","Simpson"))
     alpha_div_ps$group<-as.factor(data.frame(sample_data(ps))[,input$variable])
@@ -64,6 +65,7 @@ renderPlot({
 ```{r echo=FALSE}
 
 renderDataTable({
+    req(input$data2,input$variable)
     ps<-readRDS(input$file$datapath)
     alpha_div_ps<-estimate_richness(ps,measures=c("Chao1","Shannon","Simpson"))
     alpha_div_ps$group<-as.factor(data.frame(sample_data(ps))[,input$variable])
@@ -77,6 +79,7 @@ renderDataTable({
 ```{r echo=FALSE}
 
 renderDataTable({
+    req(input$data2,input$variable)
     ps<-readRDS(input$file$datapath)
     alpha_div_ps<-estimate_richness(ps,measures=c("Chao1","Shannon","Simpson"))
     alpha_div_ps$group<-as.factor(data.frame(sample_data(ps))[,input$variable])
