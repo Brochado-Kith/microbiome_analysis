@@ -17,7 +17,7 @@ library(DT)
 
 ```{r echo=FALSE}
 
-fileInput("file",label="select ypur phyloseq object",accept=".rds")
+fileInput("file",label="select your phyloseq object",accept=".rds")
 selectInput("data","Alpha diversity index",c("Chao1","Shannon","Simpson"))
 selectInput("variable",label="Select grouping varable","")
 selectInput("data2",label="Groups to compare","",multiple=TRUE)
