@@ -16,7 +16,7 @@ Phyloseq objects are a compound of tables with information interconected.
 
 > sample_data: Table with the clinical data of the samples included in the study. This table will have the samples as rows and the clinical variables as columns. [example sample data](https://github.com/Brochado-Kith/microbiome_analysis/blob/main/data/Sample_data.txt)
 
-> tax_table: Table where taxonomic information is stored. This table will have clusters as rows and taxonomic ranks as columns. [example tax_table]()
+> tax_table: Table where taxonomic information is stored. This table will have clusters as rows and taxonomic ranks as columns. [example tax_table](https://github.com/Brochado-Kith/microbiome_analysis/blob/main/data/taxa_data.txt)
 
 optional
 
