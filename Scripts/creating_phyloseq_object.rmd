@@ -8,3 +8,13 @@ ps <- phyloseq(otu_table(counts, taxa_are_rows=FALSE),
                sample_data(variables), 
                tax_table(taxa),phy_tree(tree))
 saveRDS(ps,file="ps.rds")
+
+# If your data file is a .biom foloow the next steps
+
+file_biom  = import_biom("PC0240.biom")
+treefilename = read_tree("PC0240.nwk")
+phy_tree(file_biom)<-treefilename
+
+ps<-file_biom
+
+write_rds(ps, "ps.rds")
