@@ -12,7 +12,7 @@ If you do not have a phyloseq object, you could start from [this script](https:/
 
 Phyloseq objects are a compound of tables with information interconected.
 
-> otu_table: Table including the counts of our clusters (OTUs, ASV...) of our sequencing esperiment. This table will have samples as columns and clusters as rows. [example otu table]()
+> otu_table: Table including the counts of our clusters (OTUs, ASV...) of our sequencing esperiment. This table will have samples as columns and clusters as rows. [example otu table](https://github.com/Brochado-Kith/microbiome_analysis/blob/main/data/OTU_table.txt)
 
 > sample_data: Table with the clinical data of the samples included in the study. This table will have the samples as rows and the clinical variables as columns. [example sample data]()
 
