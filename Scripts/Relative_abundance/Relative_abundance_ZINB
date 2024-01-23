@@ -1,1 +1,150 @@
+---
+title: "Relative abundance analysis with ZINB"
+author: "Óscar Brochado Kith"
+date: "2023-10-24"
+output: html_document
+runtime: shiny
+---
+
+```{r echo=FALSE, warning=FALSE,error=FALSE,message=FALSE}
+
+library(shiny)
+library(ggplot2)
+library(phyloseq)
+library(lme4)
+library(rstatix)
+library(DT)
+library(vegan)
+#library(NBZIMM)
+library(pscl)
+```
+
+```{r echo=FALSE}
+fileInput("file",label="Select your phyloseq object",accept=".rds")
+selectInput("rank",label="taxonomic rank","")
+selectInput("transpose",label = "Are the taxa as rows in your otu table?",c("Yes","No"),selected = "No")
+sliderInput("percentage",
+                  label = "percentage of prevalence in all samples",
+                  min = 0,
+                  max = 100,
+                  value = 0)
+sliderInput("percentage_group",
+                  label = "percentage of prevalence in group samples",
+                  min = 0,
+                  max = 100,
+                  value = 0)
+selectInput("variable",label="Select grouping varable","")
+selectInput("data2",label="Groups to compare","",multiple=TRUE)
+
+
+loaded_data <- reactiveVal(NULL)
+observeEvent(input$file, {
+    req(input$file)
+    
+    datos <- readRDS(input$file$datapath)
+    
+    loaded_data(datos)
+    
+    col_options <- colnames(as.data.frame(sample_data(datos)))
+    
+    updateSelectInput(session, "variable", choices = col_options)
+  })
+
+observeEvent(input$variable, {
+    req(loaded_data())
+
+    datos2 <- readRDS(input$file$datapath)
+
+    col_options2 <- unique(data.frame(sample_data(datos2))[,input$variable])
+
+    updateSelectInput(session, "data2", choices =col_options2)
+})
+
+loaded_data2 <- reactiveVal(NULL)
+observeEvent(input$file, {
+    # Verificar si se ha seleccionado un archivo
+    if (is.null(input$file)) return()
+    
+    # Leer el archivo cargado (puedes ajustar la función según el formato de tu archivo)
+    data <- readRDS(input$file$datapath)
+    
+    # Almacenar los datos en la reactiveVal
+    loaded_data2(data)
+    
+    # Extraer las columnas del archivo como opciones para selectInput
+    ranks <- colnames(as.data.frame(tax_table(data)))
+    
+    # Configurar las opciones para selectInput
+    updateSelectInput(session, "rank", choices = ranks)
+  })
+```
+
+```{r echo=FALSE}
+renderDataTable({
+  req(input$data2,input$variable)
+ps<-readRDS(input$file$datapath)
+if(input$transpose=="Yes"){
+  otu_table(ps)<-t(otu_table(ps))
+}
+min_samples <- round((nrow(sample_data(ps))*as.numeric(input$percentage)/100))  # Ajusta según tu criterio
+sample_data(ps)$total.counts<-rowSums(otu_table(ps))
+ps<-tax_glom(ps,taxrank = input$rank)
+data_phylo_filt <- prune_taxa(taxa_sums(ps) >= min_samples, ps)
+sample_data(data_phylo_filt)$grouping_variable<-as.factor(data.frame(sample_data(data_phylo_filt))[,input$variable])
+taxa<-tax_table(data_phylo_filt)
+samples_df<-sample_data(data_phylo_filt)
+set.seed(1782)
+data_otu_filt_rar = data.frame(otu_table(data_phylo_filt)) # create a separated file
+data_phylo_filt_rar <- phyloseq(otu_table(data_phylo_filt), taxa, sample_data(samples_df)) # create a phyloseq object
+
+        ps_mod2<-phyloseq(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,],
+                      taxa,
+                      sample_data(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$data2,])
+min_samples_group <- round((nrow(sample_data(ps_mod2))*as.numeric(input$percentage_group)/100))  # Ajusta según tu        
+ps_mod2 <- prune_taxa(taxa_sums(ps_mod2) >= min_samples_group, ps_mod2)
+  taxa<-tax_table(ps_mod2)
+N=as.numeric(sample_data(ps_mod2)$total.counts)
+pheno=round(as.data.frame(otu_table(ps_mod2))/100*N)
+yy = as.matrix(pheno)  
+yy = ifelse(is.na(yy), 0, yy)
+zero.p = apply(yy, 2, function(x) {length(x[x != 0])/length(x)} )
+zero.p = sort(zero.p, decreasing = T)
+zero.p = data.frame(zero.p)
+zero.p$id = rownames(zero.p)
+zero.p = data.frame(zero.p[zero.p$zero.p>0.2 & zero.p$zero.p<0.8, ])
+yy = yy[, rownames(zero.p)]
+taxa2<-taxa[rownames(zero.p),]
+
+ps_zinb <- phyloseq(otu_table(yy,taxa_are_rows = FALSE), taxa2, sample_data(ps_mod2)) # create a phyloseq object
+adjust<-offset(log(N))
+datos<-cbind(sample_data(ps_zinb),adjust,yy)
+colnames(datos)<-c(colnames(sample_data(ps_zinb)),"adjust",taxa2[,input$rank])
+colnames(datos)<-gsub("-","_",colnames(datos))
+datos<-as.data.frame(datos)
+taxa_glm<-gsub("-","_",taxa2[,input$rank])
+tabla<-NULL
+for (i in taxa_glm) {
+ m1<- zeroinfl(datos[,i] ~ sample_data(datos)$grouping_variable ,
+ dist = "negbin")
+  res<-summary(m1)
+  p<-res$coefficients$zero[2,4]
+  estimate<-round(exp(res$coefficients$zero[2,1]),2)
+  IC2.5<-round(exp(confint(m1)[4,1]),2)
+  IC97.5<-round(exp(confint(m1)[4,2]),2)
+tabla<-rbind(tabla,c(estimate,IC2.5,IC97.5,p))
+}
+rownames(tabla)<-taxa2[,input$rank]
+
+tabla<-as.data.frame(tabla)
+colnames(tabla)<-c("estimate","IC2.5","IC97.5","p")
+tabla$p.adj<-p.adjust(as.numeric(tabla$p),method = "fdr")
+tabla$p.adj<-round(tabla$p.adj,3)
+tabla$p<-round(tabla$p,3)
+tabla<-cbind(rownames(tabla),tabla,as.data.frame(tax_table(ps_zinb))$Phylum)
+colnames(tabla)<-c(input$rank,"Estimate","IC 2.5","IC97.5","p","p.adj (fdr)","Phylum")
+tabla<-as.data.frame(tabla)
+tabla
+})
+```
+
 
