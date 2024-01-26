@@ -24,7 +24,7 @@ selectInput("data",label = "Beta diversity method",c("bray", "jaccard", "aitchis
 selectInput("rank",label="Taxonomic rank","")
 sliderInput("percentage",
                   label = "Percentage of prevalence",
-                  min = 1,
+                  min = 0,
                   max = 100,
                   value = 10)
 selectInput("variable",label="Select grouping variable","")
@@ -169,6 +169,9 @@ as.data.frame(permanova)
 renderPlot({
   req(length(input$data2)>1,input$variable)
  ps<-readRDS(input$file$datapath)
+ if (input$transpose=="Yes") {
+otu_table(ps)<-t(otu_table(ps))
+}
   min_samples <- round((nrow(sample_data(ps))*as.numeric(input$percentage)/100))  # Ajusta según tu criterio
 ps<-tax_glom(ps,taxrank = input$rank)
 data_phylo_filt <- prune_taxa(taxa_sums(ps) >= min_samples, ps)
@@ -187,13 +190,13 @@ data_phylo_filt_rar <- phyloseq(OTU_filt_rar, taxa, sample_data(samples_df)) # c
 if (input$data=="aitchison") {
   
   ps_clr<-microbiome::transform(data_phylo_filt,"clr")
-  dist_matrix <- vegdist(otu_table(ps_temp_clr), method = "euclidean")
+  dist_matrix <- vegdist(otu_table(ps_clr), method = "euclidean")
 
 # PCoA)
 ordination_result <- pcoa(dist_matrix)
 
 # plot_ordination
-plot_ordination(ps_temp_clr, ordination_result, color = "grouping_variable") + geom_point(size=3) + stat_ellipse() 
+plot_ordination(ps_clr, ordination_result, color = "grouping_variable") + geom_point(size=3) + stat_ellipse() 
   
 }
     else if (input$data=="weighted unifrac") {
