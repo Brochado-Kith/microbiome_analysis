@@ -7,20 +7,6 @@ runtime: shiny
 ---
 
 ```{r echo=FALSE, warning=FALSE,error=FALSE,message=FALSE}
-library(shiny)
-library(ggplot2)
-library(phyloseq)
-library(lme4)
-library(rstatix)
-library(DT)---
-title: "Alpha diversity Analysis"
-author: "Óscar Brochado Kith"
-date: "2023-10-24"
-output: html_document
-runtime: shiny
----
-
-```{r echo=FALSE, warning=FALSE,error=FALSE,message=FALSE}
 
 library(shiny)
 library(ggplot2)
@@ -35,6 +21,7 @@ fileInput("file",label="select your phyloseq object",accept=".rds")
 selectInput("data","Alpha diversity index",c("Chao1","Shannon","Simpson"))
 selectInput("variable",label="Select grouping varable","")
 selectInput("data2",label="Groups to compare","",multiple=TRUE)
+selectInput("covariates",label="Add covariates","",multiple=TRUE)
 
 loaded_data <- reactiveVal(NULL)
 observeEvent(input$file, {
@@ -57,6 +44,16 @@ observeEvent(input$variable, {
     col_options2 <- unique(data.frame(sample_data(datos2))[,input$variable])
 
     updateSelectInput(session, "data2", choices =col_options2)
+})
+
+observeEvent(input$variable, {
+    req(loaded_data())
+
+    datos3 <- readRDS(input$file$datapath)
+
+    col_options3 <- colnames(as.data.frame(sample_data(datos3)))[colnames(as.data.frame(sample_data(datos3)))!=input$variable]
+
+    updateSelectInput(session, "covariates", choices =col_options3)
 })
 ```
 # Boxplot
@@ -98,6 +95,40 @@ alpha_div_ps$grouping_variable<-as.factor(data.frame(sample_data(ps))[,input$var
 alpha_div_ps_mod<-alpha_div_ps[alpha_div_ps$grouping_variable==input$data2,]
 
 as.data.frame(summary(lm(as.formula(paste0(input$data,"~","grouping_variable")),data=alpha_div_ps[alpha_div_ps$grouping_variable%in%input$data2,]))$coefficients)
+})
+
+```
+
+# GLM Gamma
+```{r echo=FALSE}
+renderDataTable({
+  req(input$data2,input$variable)
+ps<-readRDS(input$file$datapath)
+alpha_div_ps<-estimate_richness(ps,measures=c("Chao1","Shannon","Simpson"))
+alpha_div_ps$grouping_variable<-as.factor(data.frame(sample_data(ps))[,input$variable])
+alpha_div_ps_mod<-alpha_div_ps[alpha_div_ps$grouping_variable==input$data2,]
+
+as.data.frame(summary(glm(as.formula(paste0(input$data,"~","grouping_variable")),data=alpha_div_ps[alpha_div_ps$grouping_variable%in%input$data2,],family = Gamma(link="log")))$coefficients)
+})
+
+```
+# GLM with covariates
+```{r echo=FALSE}
+
+renderDataTable({
+  req(input$data2,input$variable,input$covariates)
+ps<-readRDS(input$file$datapath)
+alpha_div_ps<-estimate_richness(ps,measures=c("Chao1","Shannon","Simpson"))
+#alpha_variables<-colnames(alpha_div_ps)
+alpha_div_ps$grouping_variable<-as.factor(data.frame(sample_data(ps))[,input$variable])
+alpha_div_covariates<-data.frame(sample_data(ps))[,input$covariates]
+colnames(alpha_div_covariates)<-input$covariates
+alpha_div_ps_mod<-cbind(alpha_div_ps,alpha_div_covariates)
+alpha_div_ps_mod<-alpha_div_ps_mod[alpha_div_ps_mod$grouping_variable%in%input$data2,]
+covariates<-toString(input$covariates)
+covariates<-gsub(",","+",covariates)
+
+as.data.frame(summary(glm(as.formula(paste0(input$data,"~","grouping_variable+",covariates)),data=alpha_div_ps_mod,family = Gamma(link="log")))$coefficients)
 })
 
 ```
