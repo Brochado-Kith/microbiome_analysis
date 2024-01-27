@@ -191,13 +191,19 @@ data_phylo_filt_rar <- phyloseq(OTU_filt_rar, taxa, sample_data(samples_df)) # c
 if (input$data=="aitchison") {
   
   ps_clr<-microbiome::transform(data_phylo_filt,"clr")
-  dist_matrix <- vegdist(otu_table(ps_clr), method = "euclidean")
+  
+  ps_clr_temp<-phyloseq(otu_table(ps_clr)[sample_data(ps_clr)$grouping_variable %in% input$data2,],
+                      taxa,
+                      sample_data(ps_clr)[sample_data(ps_clr)$grouping_variable %in% input$data2,])
 
+  dist_matrix <- vegdist(otu_table(ps_clr_temp), method = "euclidean")
+  
+          
 # PCoA)
 ordination_result <- pcoa(dist_matrix)
 
 # plot_ordination
-plot_ordination(ps_clr, ordination_result, color = "grouping_variable") + geom_point(size=3) + stat_ellipse() 
+plot_ordination(ps_clr_temp, ordination_result, color = "grouping_variable") + geom_point(size=3) + stat_ellipse() 
   
 }
     else if (input$data=="weighted unifrac") {
