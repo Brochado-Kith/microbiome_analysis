@@ -67,7 +67,10 @@ alpha_div_ps_mod<-alpha_div_ps[alpha_div_ps$grouping_variable==input$data2,]
 
 
     ggplot(alpha_div_ps_mod,aes(x=grouping_variable,y=get(input$data)))  +
-    geom_boxplot(aes(colour=grouping_variable)) + geom_jitter(width = 0.2,aes(colour=grouping_variable))
+    geom_boxplot(aes(colour=grouping_variable)) + geom_jitter(width = 0.2,aes(colour=grouping_variable)) +
+      labs(y=input$data) +
+      #guides(fill=guide_legend(title=input$variable))
+      scale_fill_discrete(name=input$variable)
 })
 
 ```
@@ -122,8 +125,14 @@ alpha_div_ps<-estimate_richness(ps,measures=c("Chao1","Shannon","Simpson"))
 #alpha_variables<-colnames(alpha_div_ps)
 alpha_div_ps$grouping_variable<-as.factor(data.frame(sample_data(ps))[,input$variable])
 alpha_div_covariates<-data.frame(sample_data(ps))[,input$covariates]
+if (length(input$covariates)>1){
 colnames(alpha_div_covariates)<-input$covariates
 alpha_div_ps_mod<-cbind(alpha_div_ps,alpha_div_covariates)
+}
+else{
+  alpha_div_ps_mod<-cbind(alpha_div_ps,alpha_div_covariates)
+  colnames(alpha_div_ps_mod)[ncol(alpha_div_ps_mod)]<-input$covariates
+}
 alpha_div_ps_mod<-alpha_div_ps_mod[alpha_div_ps_mod$grouping_variable%in%input$data2,]
 covariates<-toString(input$covariates)
 covariates<-gsub(",","+",covariates)
@@ -132,3 +141,107 @@ as.data.frame(summary(glm(as.formula(paste0(input$data,"~","grouping_variable+",
 })
 
 ```
+
+# Paired compairsons
+```{r echo =FALSE}
+selectInput("paired",label="Variable for paired comparisons","")
+selectInput("ID",label="Variable where the ID is located","")
+selectInput("groups",label="Select groups","",multiple = TRUE)
+
+
+
+observeEvent(input$file, {
+    req(input$file)
+    
+    datos_paired <- readRDS(input$file$datapath)
+    
+    loaded_data(datos_paired)
+    
+    col_options_paired <- colnames(as.data.frame(sample_data(datos_paired)))
+    
+    updateSelectInput(session, "paired", choices = col_options_paired)
+  })
+
+observeEvent(input$paired, {
+    req(loaded_data())
+
+    datos_groups <- readRDS(input$file$datapath)
+
+    col_options_groups <- unique(data.frame(sample_data(datos_groups))[,input$paired])
+
+    updateSelectInput(session, "groups", choices =col_options_groups)
+})
+
+observeEvent(input$paired, {
+    req(input$paired)
+    
+    datos_id <- readRDS(input$file$datapath)
+    
+    loaded_data(datos_id)
+    
+    col_options_id <- colnames(as.data.frame(sample_data(datos_id)))[colnames(as.data.frame(sample_data(datos_id)))!=input$paired]
+    
+    updateSelectInput(session, "ID", choices = col_options_id)
+  })
+
+```
+
+
+```{r echo=FALSE}
+
+renderDataTable({
+req(input$paired,input$groups,input$ID)
+ps<-readRDS(input$file$datapath)
+alpha_div_ps<-estimate_richness(ps,measures=c("Chao1","Shannon","Simpson"))
+alpha_div_ps_mod<-cbind(alpha_div_ps,as.data.frame(sample_data(ps))[,c(input$paired,input$ID)])
+alpha_div_ps_mod<-alpha_div_ps_mod[alpha_div_ps_mod[,input$paired]%in%input$groups,]
+alpha_div_ps_mod2<-alpha_div_ps_mod[order(
+  alpha_div_ps_mod[,input$paired],
+  alpha_div_ps_mod[,input$ID]),]
+alpha_div_ps_mod3<-alpha_div_ps_mod2[alpha_div_ps_mod2[,input$ID]
+%in%
+alpha_div_ps_mod2[
+    duplicated(alpha_div_ps_mod2[input$ID]),input$ID]
+,]
+
+#alpha_div_ps_mod3[,c(input$data,input$paired)]
+
+a<-pairwise.wilcox.test(alpha_div_ps_mod3[,input$data],alpha_div_ps_mod3[,input$paired],p.adjust.method = "fdr")
+a$p.value
+})
+```
+
+```{r echo=FALSE}
+renderPlot({
+req(input$paired,input$groups,input$ID)
+ps<-readRDS(input$file$datapath)
+alpha_div_ps<-estimate_richness(ps,measures=c("Chao1","Shannon","Simpson"))
+alpha_div_ps_mod<-cbind(alpha_div_ps,as.data.frame(sample_data(ps))[,c(input$paired,input$ID)])
+alpha_div_ps_mod<-alpha_div_ps_mod[alpha_div_ps_mod[,input$paired]%in%input$groups,]
+alpha_div_ps_mod2<-alpha_div_ps_mod[order(
+  alpha_div_ps_mod[,input$paired],
+  alpha_div_ps_mod[,input$ID]),]
+alpha_div_ps_mod3<-alpha_div_ps_mod2[alpha_div_ps_mod2[,input$ID]
+%in%
+alpha_div_ps_mod2[
+    duplicated(alpha_div_ps_mod2[input$ID]),input$ID]
+,]
+
+alpha_div_ps_mod3$grouping_variable<-as.factor(alpha_div_ps_mod3[,input$paired])
+b=runif(nrow(alpha_div_ps_mod3),-0.1,0.1)
+ggplot(alpha_div_ps_mod3,aes(x=grouping_variable,y=get(input$data))) +
+  geom_boxplot(width=0.3,size=1.5,fatten=1.5,aes(colour=grouping_variable)) +
+  geom_point(aes(x=as.numeric(grouping_variable)+b,y=get(input$data),colour=grouping_variable),size=2,alpha=0.5) +
+  geom_line(aes(x=as.numeric(grouping_variable)+b,y=get(input$data),group=get(input$ID)),colour="black",size=0.1) +
+  theme_classic()
+})
+# 
+# ggplot(alpha_div_ps_mod,aes(x=grouping_variable,y=get(input$data)))  +
+#     geom_boxplot(aes(colour=grouping_variable)) + geom_jitter(width = 0.2,aes(colour=grouping_variable)) +
+#       labs(y=input$data) +
+#       #guides(fill=guide_legend(title=input$variable))
+#       scale_fill_discrete(name=input$variable)
+```
+
+
+
