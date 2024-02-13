@@ -15,14 +15,8 @@ library(rstatix)
 library(ggplot2)
 library(pscl)
 
-# Define UI for application that draws a histogram
 ui <- navbarPage("Metagenomic analysis",
-                 
-                 # Application title
                  tabPanel("Load and apply general or specific settings",
-                          
-                          # Sidebar with a slider input for number of bins 
-                          
                           tabsetPanel(
                             tabPanel("Load your data",
                                      fluidRow(
@@ -36,21 +30,21 @@ ui <- navbarPage("Metagenomic analysis",
                                               uiOutput("select_rank"),)
                                      )
                             ),
-                            # Panel de alpha diversidad
+                            # Panel for alpha-diversity
                             tabPanel("Alpha diversity settings",
                                      selectInput("alpha","Alpha diversity index",c("Chao1","Shannon","Simpson"))
                                          ),
-                            
+                            # Panel for beta-diversity
                             tabPanel("Beta diversity settings",
                                      selectInput("transpose",label = "Are the taxa as rows in your otu table?",c("Yes","No"),selected = "No"),
-                                     selectInput("beta",label = "Beta diversity method",c("bray", "jaccard", "aitchison", "robust.aitchison","weighted unifrac","unweighted unifrac")),
+                                     selectInput("beta",label = "Beta diversity method",c("bray", "jaccard", "aitchison","weighted unifrac","unweighted unifrac")),
                                      sliderInput("percentage_beta",
                                                  label = "Percentage of prevalence",
                                                  min = 0,
                                                  max = 100,
                                                  value = 0)
                                      ),
-                            
+                            # Panel for ZINB
                             tabPanel("ZINB settings",
                                      sliderInput("percentage_zinb",
                                                  label = "percentage of prevalence in all samples",
@@ -99,7 +93,7 @@ ui <- navbarPage("Metagenomic analysis",
 )
   
 server <- function(input, output,session) {
-observeEvent(input$file,{         # para que actualice la variable grupo
+observeEvent(input$file,{
   if (!is.null(input$file)) {
     archivo<-readRDS(input$file$datapath)
     clinica<-data.frame(sample_data(archivo))
@@ -109,7 +103,7 @@ observeEvent(input$file,{         # para que actualice la variable grupo
   }
 })
   
-  observeEvent(input$variable,{         # para que actualice la variable grupo
+  observeEvent(input$variable,{ 
     if (!is.null(input$variable)) {
       archivo<-readRDS(input$file$datapath)
       clinica<-data.frame(sample_data(archivo))
@@ -119,7 +113,7 @@ observeEvent(input$file,{         # para que actualice la variable grupo
     }
   })
   
-  observeEvent(input$file,{         # para que actualice la variable rank
+  observeEvent(input$file,{
     if (!is.null(input$file)) {
       archivo<-readRDS(input$file$datapath)
       taxa<-data.frame(tax_table(archivo))
@@ -162,6 +156,7 @@ observeEvent(input$file,{         # para que actualice la variable grupo
     glm_res<-cbind(rownames(glm_res),glm_res)
     as.data.frame(glm_res)
     })
+  
   # Beta diversity
 datos_beta<-reactive({
   req(length(input$groups)>1,input$variable)
@@ -169,7 +164,7 @@ datos_beta<-reactive({
     if (input$transpose=="Yes") {
       otu_table(ps)<-t(otu_table(ps))
     }
-    min_samples <- round((nrow(sample_data(ps))*as.numeric(input$percentage_beta)/100))  # Ajusta según tu criterio
+    min_samples <- round((nrow(sample_data(ps))*as.numeric(input$percentage_beta)/100)) 
     ps<-tax_glom(ps,taxrank = input$rank)
     data_phylo_filt <- prune_taxa(taxa_sums(ps) >= min_samples, ps)
     sample_data(data_phylo_filt)$grouping_variable<-as.factor(data.frame(sample_data(data_phylo_filt))[,input$variable])
@@ -321,7 +316,7 @@ datos_beta<-reactive({
     }
     else{
       a<-       data.frame(
-        adonis2(as.formula(otu_table(data_phylo_filt_rar)[sample_data(data_phylo_filt_rar)$grouping_variable %in% input$groups,]~(sample_data(data_phylo_filt_rar))$grouping_variable[sample_data(data_phylo_filt_rar)$grouping_variable%in%input$groups]),permutations=9999, method=input$beta,na.action = na.omit)
+        adonis2(as.formula(otu_table(ps_temp)[sample_data(ps_temp)$grouping_variable %in% input$groups,]~(sample_data(ps_temp))$grouping_variable[sample_data(ps_temp)$grouping_variable%in%input$groups]),permutations=9999, method=input$beta,na.action = na.omit)
       )
       rownames(a)[1]<-as.character(input$variable)
       a
@@ -334,7 +329,7 @@ datos_beta<-reactive({
     if(input$transpose=="Yes"){
       otu_table(ps)<-t(otu_table(ps))
     }
-    min_samples <- round((nrow(sample_data(ps))*as.numeric(input$percentage_zinb)/100))  # Ajusta según tu criterio
+    min_samples <- round((nrow(sample_data(ps))*as.numeric(input$percentage_zinb)/100))
     sample_data(ps)$total.counts<-rowSums(otu_table(ps))
     ps<-tax_glom(ps,taxrank = input$rank)
     data_phylo_filt <- prune_taxa(taxa_sums(ps) >= min_samples, ps)
@@ -415,4 +410,3 @@ datos_beta<-reactive({
 
 # Run the application 
 shinyApp(ui = ui, server = server)
-
