@@ -22,6 +22,9 @@ optional
 
 > phy_tree: This object will have a phylogenetic tree that will be usefull for subsequent analysis. example [phy tree]()
 
+NOW YOU CAN TRY THE APP INSTEAD OF THE SEPARATED SCRIPTS!!!
+Download it and give it a try.
+
 ## Alpha diversity
 
 Once you have created the phyloseq object you can start the analysis.
@@ -61,6 +64,6 @@ As with the alpha diversity stimation, we will have differents ways to calculate
 ## Relative abundance differences
 
 In this pipeline we will perform a generalize linear model (glm) under a negative binomial distribution by using the DESeq2 package and a glm under a zero inflated negative binomial ([ZINB](https://github.com/Brochado-Kith/microbiome_analysis/blob/main/Scripts/Relative_abundance/Relative_abundance_ZINB)) distribution.
-ALso, we will use the package ALDEx2 to perform a relative abundance analysis using clr transformed data.
+
 
 
