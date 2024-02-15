@@ -7,6 +7,15 @@
 #    http://shiny.rstudio.com/
 #
 
+list.of.packages <- c("shiny","shinycssloaders","phyloseq","vegan","rstatix","ggplot2", "pscl")
+new.packages <- setdiff(list.of.packages,installed.packages()[,"Package"])
+if(!require(BiocManager)){
+  install.packages("BiocManager")
+  library(BiocManager)
+}
+
+if(length(new.packages)>0){ install(new.packages)}
+
 library(shiny)
 library(shinycssloaders)
 library(phyloseq)
@@ -21,7 +30,7 @@ ui <- navbarPage("Metagenomic analysis",
                             tabPanel("Load your data",
                                      fluidRow(
                                        column(12,
-                                              fileInput("file",label = "Select or drop your phyloseq object",accept=".rds")),
+                                              fileInput("file",label = "Select or drop your phyloseq file",accept=".rds")),
                                        column(3,
                                               uiOutput("select_variable")),
                                        column(3,
@@ -66,31 +75,42 @@ ui <- navbarPage("Metagenomic analysis",
                  tabPanel("Alpha diversity",
                           tabsetPanel(
                             tabPanel("Plot",
-                                     withSpinner(plotOutput(outputId = "alpha_plot"))),
+                                     withSpinner(plotOutput(outputId = "alpha_plot"),color = getOption("spinner.color", default = "dodgerblue3"),
+                                                 type=getOption("spinner.type",default=2),color.background = "dodgerblue4")),
                             tabPanel("Table",
                                      h2("Results from kruskal walis"),
-                                     withSpinner(dataTableOutput(outputId = "table_k_alpha")),
+                                     withSpinner(dataTableOutput(outputId = "table_k_alpha"),
+                                                 color = getOption("spinner.color", default = "dodgerblue3"),
+                                                 type=getOption("spinner.type",default=2),color.background = "dodgerblue4"),
                                      h2("Results from glm gamma"),
-                                     withSpinner(dataTableOutput(outputId = "table_glm_alpha")))
+                                     withSpinner(dataTableOutput(outputId = "table_glm_alpha"),color = getOption("spinner.color", default = "dodgerblue3"),
+                                                 type=getOption("spinner.type",default=2),color.background = "dodgerblue4")
                           )
-                 ),
+                 )),
                  tabPanel("Beta diversity",
                           tabsetPanel(
                             tabPanel("Plot",
-                                     withSpinner(plotOutput(outputId = "beta_plot"))),
+                                     withSpinner(plotOutput(outputId = "beta_plot"),
+                                                 color = getOption("spinner.color", default = "dodgerblue3"),
+                                                 type=getOption("spinner.type",default=2),color.background = "dodgerblue4")),
                             tabPanel("Table",
-                                     withSpinner(dataTableOutput("beta_table")))
+                                     withSpinner(dataTableOutput("beta_table"),
+                                                 color = getOption("spinner.color", default = "dodgerblue3"),
+                                                 type=getOption("spinner.type",default=2),color.background = "dodgerblue4"))
                           )
                           ),
                  tabPanel("ZINB",
                           tabsetPanel(
                             tabPanel("Plot",
-                                     withSpinner(plotOutput(outputId = "ZINB_plot"))),
+                                     withSpinner(plotOutput(outputId = "ZINB_plot"),
+                                                 color = getOption("spinner.color", default = "dodgerblue3"),
+                                     type=getOption("spinner.type",default=2),color.background = "dodgerblue4")),
                             tabPanel("Table",
-                                     withSpinner(dataTableOutput(outputId = "ZINB_table")))
+                                     withSpinner(dataTableOutput(outputId = "ZINB_table"),color = getOption("spinner.color", default = "dodgerblue3"),
+                                                 type=getOption("spinner.type",default=2),color.background = "dodgerblue4")))
                           )
                  )
-)
+
   
 server <- function(input, output,session) {
 observeEvent(input$file,{
@@ -133,9 +153,9 @@ observeEvent(input$file,{
     
     
     ggplot(alpha_div_ps_mod,aes(x=grouping_variable,y=get(input$alpha)))  +
-      geom_boxplot(aes(colour=grouping_variable)) + geom_jitter(width = 0.2,aes(colour=grouping_variable)) +
+      geom_violin(aes(colour=grouping_variable)) + geom_jitter(width = 0.2,aes(colour=grouping_variable)) +
       labs(y=input$alpha) +
-      scale_fill_discrete(name=input$variable)
+      scale_fill_discrete(name=input$variable) + theme_minimal()
   })
   output$table_k_alpha<-renderDataTable({
     req(input$groups,input$variable)
@@ -205,7 +225,7 @@ datos_beta<-reactive({
       ordination_result <- pcoa(dist_matrix)
       
       # plot_ordination
-      plot_ordination(ps_clr_temp, ordination_result, color = "grouping_variable") + geom_point(size=3) + stat_ellipse() 
+      plot_ordination(ps_clr_temp, ordination_result, color = "grouping_variable") + geom_point(size=3) + stat_ellipse() + theme_minimal()
       
     }
     else if (input$beta=="weighted unifrac") {
@@ -219,7 +239,7 @@ datos_beta<-reactive({
                                     ordu.wt.uni, color="grouping_variable") 
       wt.unifrac <- wt.unifrac + ggtitle("Weighted UniFrac") + geom_point(size = 2)
       wt.unifrac <- wt.unifrac + theme_classic() + scale_color_brewer("grouping_variable", palette = "Set2")
-      print(wt.unifrac+ stat_ellipse())
+      print(wt.unifrac+ stat_ellipse()) + theme_minimal()
       
       
       unifrac.dist <- UniFrac(ps_temp, 
@@ -246,7 +266,7 @@ datos_beta<-reactive({
                                       ordu.unwt.uni, color="grouping_variable") 
       unwt.unifrac <- unwt.unifrac + ggtitle("Unweighted UniFrac") + geom_point(size = 2)
       unwt.unifrac <- unwt.unifrac + theme_classic() + scale_color_brewer("grouping_variable", palette = "Set2")
-      print(unwt.unifrac+ stat_ellipse())
+      print(unwt.unifrac+ stat_ellipse()) + theme_minimal()
       
       unifrac.dist <- UniFrac(ps_temp, 
                               weighted = FALSE, 
@@ -266,7 +286,7 @@ datos_beta<-reactive({
     else{
       pcoa_bc_temp=ordinate(ps_temp,"PCoA",input$beta)
       plot_ordination(ps_temp, pcoa_bc_temp, color = "grouping_variable") +
-        geom_point(size = 3) + stat_ellipse()
+        geom_point(size = 3) + stat_ellipse() + theme_minimal()
       
     }
   })
@@ -391,7 +411,7 @@ datos_beta<-reactive({
       p<-ggplot(tabla2, aes(y=get(input$rank), x=log(Estimate), color=Phylum)) +
         geom_vline(xintercept = c(-log2(as.numeric(input$foldchange)),0,log2(as.numeric(input$foldchange))), color = c("red","gray","red"), size = 0.5) +
         geom_point(size=6) +
-        theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust=0.5))
+        theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust=0.5)) +theme_minimal()
 
     list(table_zinb=tabla,
          graph=p)
@@ -410,3 +430,4 @@ datos_beta<-reactive({
 
 # Run the application 
 shinyApp(ui = ui, server = server)
+
