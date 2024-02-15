@@ -14,7 +14,7 @@ if(!require(BiocManager)){
   library(BiocManager)
 }
 
-if(length(new.packages)>0){ install(new.packages)}
+if(length(new.packages)>0){ install(new.packages,update=TRUE,ask=FALSE)}
 
 library(shiny)
 library(shinycssloaders)
@@ -30,7 +30,7 @@ ui <- navbarPage("Metagenomic analysis",
                             tabPanel("Load your data",
                                      fluidRow(
                                        column(12,
-                                              fileInput("file",label = "Select or drop your phyloseq file",accept=".rds")),
+                                              fileInput("file",label = "Select or drop your phyloseq object",accept=".rds")),
                                        column(3,
                                               uiOutput("select_variable")),
                                        column(3,
