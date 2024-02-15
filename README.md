@@ -22,8 +22,12 @@ optional
 
 > phy_tree: This object will have a phylogenetic tree that will be usefull for subsequent analysis. example [phy tree]()
 
+
+
 NOW YOU CAN TRY THE APP INSTEAD OF THE SEPARATED SCRIPTS!!!
 Download it and give it a try.
+
+
 
 ## Alpha diversity
 
