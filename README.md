@@ -3,6 +3,7 @@ Thank you for reach to these scripts, hope you find them usefull.
 
 The following codes are focused on microbiome analysis with R.
 Alpha, Beta and Relative abundance differences (RA) will be explored along this pipeline.
+You can choose to run each script separatedly or to use the [app](https://github.com/Brochado-Kith/microbiome_analysis/blob/main/App/App_metagenomics.r) I made joining all the statistical scripts (you will need to create the phyloseq object).
 
 These scripts are made with shinny code that allows interactivity.
 You will be able to choose which groups will be on the analysis, percentaje of prevalence of Clusters, etc.
